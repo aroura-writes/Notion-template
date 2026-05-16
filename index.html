@@ -109,7 +109,7 @@
           <button type="button" id="increase" aria-label="Increase quantity">+</button>
         </div>
         <button type="button" id="save" class="save-btn">Save Count</button>
-        <div id="status" class="status-text">Loading from cloud...</div>
+        <div id="status" class="status-text">Loading...</div>
       </div>
     </div>
 
@@ -120,24 +120,27 @@
       const saveBtn = document.getElementById('save');
       const statusText = document.getElementById('status');
 
-      // Unique cloud locker name. CHANGE 'my_secret_pen_tracker' to any unique random words so nobody else guesses it!
-      const LOCKER_ID = 'my_unique_notion_pen_blahhhtracker_2026'; 
-      const API_URL = `https://kvdb.io{LOCKER_ID}`; // Using a public KV bucket
+      // Change 'unique_tracker_id_2026' to any random letters/numbers to secure your counter space
+      const TRACKER_NAMESPACE = "notion_pen_counter_system";
+      const TRACKER_KEY = "unique_tracker_id_2026"; 
+      
+      const API_GET_URL = `https://countapi.xyz{TRACKER_NAMESPACE}/${TRACKER_KEY}`;
+      const API_SET_URL = `https://countapi.xyz{TRACKER_NAMESPACE}/${TRACKER_KEY}?value=`;
 
-      // 1. Fetch count from the Cloud Database when page opens
+      // Load data from the cloud API
       window.addEventListener('DOMContentLoaded', async () => {
         try {
-          const response = await fetch(API_URL);
+          const response = await fetch(API_GET_URL);
           if (response.ok) {
-            const cloudCount = await response.text();
-            quantityInput.value = cloudCount !== "" ? cloudCount : "0";
+            const data = await response.json();
+            quantityInput.value = data.value;
             statusText.textContent = "Synced with cloud";
           } else {
-            statusText.textContent = "Ready (No cloud data yet)";
+            // Key doesn't exist yet, initialize it
+            statusText.textContent = "Welcome! Click save to start tracking.";
           }
         } catch (error) {
-          statusText.textContent = "Offline mode active";
-          // Fallback to local storage if internet fails
+          statusText.textContent = "Using offline browser memory";
           const savedCount = localStorage.getItem('finishedPensCount');
           if (savedCount !== null) quantityInput.value = savedCount;
         }
@@ -153,27 +156,24 @@
         quantityInput.value = currentValue + 1;
       });
 
-      // 2. Save the count to the Cloud Database
+      // Save data to the cloud API
       saveBtn.addEventListener('click', async () => {
         const val = quantityInput.value;
         saveBtn.disabled = true;
-        statusText.textContent = "Saving to cloud...";
+        statusText.textContent = "Saving...";
 
         try {
-          // Save to Cloud
-          await fetch(API_URL, {
-            method: 'POST',
-            body: val
-          });
-          
-          // Local fallback backup
-          localStorage.setItem('finishedPensCount', val);
-
-          saveBtn.textContent = 'Saved! ✓';
-          saveBtn.style.backgroundColor = '#1f6feb';
-          statusText.textContent = "Cloud update successful";
+          const response = await fetch(`${API_SET_URL}${val}`);
+          if (response.ok) {
+            localStorage.setItem('finishedPensCount', val); // Fallback backup
+            saveBtn.textContent = 'Saved! ✓';
+            saveBtn.style.backgroundColor = '#1f6feb';
+            statusText.textContent = "Cloud update successful";
+          } else {
+            throw new Error("API rejection");
+          }
         } catch (error) {
-          statusText.textContent = "Error saving to cloud!";
+          statusText.textContent = "Error saving online!";
           saveBtn.style.backgroundColor = '#da3637';
         }
 
