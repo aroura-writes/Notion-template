@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pen Tracker</title>
+    <title>Pen Tracker (Cloud Sync)</title>
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -11,7 +11,7 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: transparent; /* Seamless blend with Notion background */
+        background-color: transparent; 
         margin: 0;
       }
       .quantity-container {
@@ -73,7 +73,7 @@
         -moz-appearance: textfield;
       }
       .save-btn {
-        background-color: #238636; /* GitHub green */
+        background-color: #238636;
         color: white;
         border: none;
         padding: 8px 18px;
@@ -87,8 +87,15 @@
       .save-btn:hover {
         background-color: #2ea043;
       }
-      .save-btn:active {
-        transform: scale(0.98);
+      .save-btn:disabled {
+        background-color: #8cc665;
+        cursor: not-allowed;
+      }
+      .status-text {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 4px;
+        height: 12px;
       }
     </style>
   </head>
@@ -102,6 +109,7 @@
           <button type="button" id="increase" aria-label="Increase quantity">+</button>
         </div>
         <button type="button" id="save" class="save-btn">Save Count</button>
+        <div id="status" class="status-text">Loading from cloud...</div>
       </div>
     </div>
 
@@ -110,21 +118,34 @@
       const decreaseBtn = document.getElementById('decrease');
       const increaseBtn = document.getElementById('increase');
       const saveBtn = document.getElementById('save');
+      const statusText = document.getElementById('status');
 
-      // Load saved count automatically when Notion page opens
-      window.addEventListener('DOMContentLoaded', () => {
-        const savedCount = localStorage.getItem('finishedPensCount');
-        if (savedCount !== null) {
-          quantityInput.value = savedCount;
+      // Unique cloud locker name. CHANGE 'my_secret_pen_tracker' to any unique random words so nobody else guesses it!
+      const LOCKER_ID = 'my_unique_notion_pen_blahhhtracker_2026'; 
+      const API_URL = `https://kvdb.io{LOCKER_ID}`; // Using a public KV bucket
+
+      // 1. Fetch count from the Cloud Database when page opens
+      window.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const response = await fetch(API_URL);
+          if (response.ok) {
+            const cloudCount = await response.text();
+            quantityInput.value = cloudCount !== "" ? cloudCount : "0";
+            statusText.textContent = "Synced with cloud";
+          } else {
+            statusText.textContent = "Ready (No cloud data yet)";
+          }
+        } catch (error) {
+          statusText.textContent = "Offline mode active";
+          // Fallback to local storage if internet fails
+          const savedCount = localStorage.getItem('finishedPensCount');
+          if (savedCount !== null) quantityInput.value = savedCount;
         }
       });
 
       decreaseBtn.addEventListener('click', () => {
         let currentValue = parseInt(quantityInput.value) || 0;
-        let min = parseInt(quantityInput.min) || 0;
-        if (currentValue > min) {
-          quantityInput.value = currentValue - 1;
-        }
+        if (currentValue > 0) quantityInput.value = currentValue - 1;
       });
 
       increaseBtn.addEventListener('click', () => {
@@ -132,13 +153,32 @@
         quantityInput.value = currentValue + 1;
       });
 
-      // Save the current number to local storage
-      saveBtn.addEventListener('click', () => {
-        localStorage.setItem('finishedPensCount', quantityInput.value);
-        saveBtn.textContent = 'Saved! ✓';
-        saveBtn.style.backgroundColor = '#1f6feb'; // Turns blue briefly to show success
-        
+      // 2. Save the count to the Cloud Database
+      saveBtn.addEventListener('click', async () => {
+        const val = quantityInput.value;
+        saveBtn.disabled = true;
+        statusText.textContent = "Saving to cloud...";
+
+        try {
+          // Save to Cloud
+          await fetch(API_URL, {
+            method: 'POST',
+            body: val
+          });
+          
+          // Local fallback backup
+          localStorage.setItem('finishedPensCount', val);
+
+          saveBtn.textContent = 'Saved! ✓';
+          saveBtn.style.backgroundColor = '#1f6feb';
+          statusText.textContent = "Cloud update successful";
+        } catch (error) {
+          statusText.textContent = "Error saving to cloud!";
+          saveBtn.style.backgroundColor = '#da3637';
+        }
+
         setTimeout(() => {
+          saveBtn.disabled = false;
           saveBtn.textContent = 'Save Count';
           saveBtn.style.backgroundColor = '#238636';
         }, 1500);
