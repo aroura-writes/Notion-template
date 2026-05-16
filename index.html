@@ -1,37 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-      <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <title>Quantity Input</title>
-                  <style>
-                        body {      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;      display: flex;      justify-content: center;      align-items: center;      height: 100vh;      background-color: #fcfcfc;      margin: 0;    }
-                              .quantity-container {      text-align: left;    }
-                                    h2 {      font-size: 2rem;      font-weight: 700;      margin-bottom: 24px;      color: #000;    }
-                                          .quantity-input {      display: inline-flex;      align-items: center;      background-color: #ffffff;      padding: 6px 12px;      border-radius: 100px;      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);    }
-                                                .quantity-input button {      background: none;      border: none;      font-size: 1.2rem;      cursor: pointer;      width: 36px;      height: 36px;      display: flex;      align-items: center;      justify-content: center;      color: #555;      transition: color 0.2s;    }
-                                                      .quantity-input button:hover {      color: #000;    }
-                                                            .quantity-input input[type="number"] {      width: 40px;      text-align: center;      border: none;      background: none;      font-size: 1.1rem;      font-weight: 500;      color: #000;      outline: none;    }
-                                                                  /* Hide standard browser arrows inside the number input */    .quantity-input input::-webkit-outer-spin-button,    .quantity-input input::-webkit-inner-spin-button {      -webkit-appearance: none;      margin: 0;    }    .quantity-input input[type="number"] {      -moz-appearance: textfield;    }
-                                                                      </style>
-                                                                        </head>
-                                                                          <body>
-                                                                              <div class="quantity-container">
-                                                                                    <h2>Quantity Input</h2>
-                                                                                          <div class="quantity-input">
-                                                                                                  <button type="button" id="decrease" aria-label="Decrease quantity">
-                                                                                                            −
-                                                                                                                    </button>
-                                                                                                                            <input type="number" id="quantity" value="6" min="1" />
-                                                                                                                                    <button type="button" id="increase" aria-label="Increase quantity">
-                                                                                                                                              +
-                                                                                                                                                      </button>
-                                                                                                                                                            </div>
-                                                                                                                                                                </div>
-                                                                                                                                                                    <script>
-                                                                                                                                                                          const quantityInput = document.getElementById('quantity');    const decreaseBtn = document.getElementById('decrease');    const increaseBtn = document.getElementById('increase');
-                                                                                                                                                                                decreaseBtn.addEventListener('click', () => {      let currentValue = parseInt(quantityInput.value) || 0;      let min = parseInt(quantityInput.min) || 1;      if (currentValue > min) {        quantityInput.value = currentValue - 1;      }    });
-                                                                                                                                                                                      increaseBtn.addEventListener('click', () => {      let currentValue = parseInt(quantityInput.value) || 0;      quantityInput.value = currentValue + 1;    });
-                                                                                                                                                                                          </script>
-                                                                                                                                                                                            </body>
-                                                                                                                                                                                            </html>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pen Tracker</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: transparent; /* Seamless blend with Notion background */
+        margin: 0;
+      }
+      .quantity-container {
+        text-align: center;
+      }
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #000;
+      }
+      .quantity-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .quantity-input {
+        display: inline-flex;
+        align-items: center;
+        background-color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 100px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e0e0e0;
+      }
+      .quantity-input button {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #555;
+        transition: color 0.2s;
+      }
+      .quantity-input button:hover {
+        color: #000;
+      }
+      .quantity-input input[type="number"] {
+        width: 50px;
+        text-align: center;
+        border: none;
+        background: none;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #000;
+        outline: none;
+      }
+      .quantity-input input::-webkit-outer-spin-button,
+      .quantity-input input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .quantity-input input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      .save-btn {
+        background-color: #238636; /* GitHub green */
+        color: white;
+        border: none;
+        padding: 8px 18px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        width: 100%;
+      }
+      .save-btn:hover {
+        background-color: #2ea043;
+      }
+      .save-btn:active {
+        transform: scale(0.98);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="quantity-container">
+      <h2>Finished Pens</h2>
+      <div class="quantity-wrapper">
+        <div class="quantity-input">
+          <button type="button" id="decrease" aria-label="Decrease quantity">−</button>
+          <input type="number" id="quantity" value="0" min="0" />
+          <button type="button" id="increase" aria-label="Increase quantity">+</button>
+        </div>
+        <button type="button" id="save" class="save-btn">Save Count</button>
+      </div>
+    </div>
+
+    <script>
+      const quantityInput = document.getElementById('quantity');
+      const decreaseBtn = document.getElementById('decrease');
+      const increaseBtn = document.getElementById('increase');
+      const saveBtn = document.getElementById('save');
+
+      // Load saved count automatically when Notion page opens
+      window.addEventListener('DOMContentLoaded', () => {
+        const savedCount = localStorage.getItem('finishedPensCount');
+        if (savedCount !== null) {
+          quantityInput.value = savedCount;
+        }
+      });
+
+      decreaseBtn.addEventListener('click', () => {
+        let currentValue = parseInt(quantityInput.value) || 0;
+        let min = parseInt(quantityInput.min) || 0;
+        if (currentValue > min) {
+          quantityInput.value = currentValue - 1;
+        }
+      });
+
+      increaseBtn.addEventListener('click', () => {
+        let currentValue = parseInt(quantityInput.value) || 0;
+        quantityInput.value = currentValue + 1;
+      });
+
+      // Save the current number to local storage
+      saveBtn.addEventListener('click', () => {
+        localStorage.setItem('finishedPensCount', quantityInput.value);
+        saveBtn.textContent = 'Saved! ✓';
+        saveBtn.style.backgroundColor = '#1f6feb'; // Turns blue briefly to show success
+        
+        setTimeout(() => {
+          saveBtn.textContent = 'Save Count';
+          saveBtn.style.backgroundColor = '#238636';
+        }, 1500);
+      });
+    </script>
+  </body>
+</html>
