@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pen Tracker (Cloud Sync)</title>
+    <title>Pen Tracker (Stable Cloud Sync)</title>
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -109,7 +109,7 @@
           <button type="button" id="increase" aria-label="Increase quantity">+</button>
         </div>
         <button type="button" id="save" class="save-btn">Save Count</button>
-        <div id="status" class="status-text">Loading...</div>
+        <div id="status" class="status-text">Connecting to sync cluster...</div>
       </div>
     </div>
 
@@ -120,29 +120,29 @@
       const saveBtn = document.getElementById('save');
       const statusText = document.getElementById('status');
 
-      // Change 'unique_tracker_id_2026' to any random letters/numbers to secure your counter space
-      const TRACKER_NAMESPACE = "notion_pen_counter_system";
-      const TRACKER_KEY = "unique_tracker_id_2026"; 
-      
-      const API_GET_URL = `https://countapi.xyz{TRACKER_NAMESPACE}/${TRACKER_KEY}`;
-      const API_SET_URL = `https://countapi.xyz{TRACKER_NAMESPACE}/${TRACKER_KEY}?value=`;
+      // ⚠️ PASTE YOUR COPIED JSONBIN CREDENTIALS HERE
+      const BIN_ID = "6a087c15adc21f119aac5a90";
+      const MASTER_KEY = "$2a$10$spwZJ/Hpgig1Dqkd4.HCx.1fWYSedZDq5Av9syFcW0QeAaHqiwrya";
 
-      // Load data from the cloud API
+      const API_URL = `https://jsonbin.io{BIN_ID}`;
+
+      // Load data from JSONbin storage
       window.addEventListener('DOMContentLoaded', async () => {
         try {
-          const response = await fetch(API_GET_URL);
+          const response = await fetch(`${API_URL}/latest`, {
+            headers: { 'X-Master-Key': MASTER_KEY }
+          });
           if (response.ok) {
-            const data = await response.json();
-            quantityInput.value = data.value;
+            const resData = await response.json();
+            quantityInput.value = resData.record.count || 0;
             statusText.textContent = "Synced with cloud";
           } else {
-            // Key doesn't exist yet, initialize it
-            statusText.textContent = "Welcome! Click save to start tracking.";
+            statusText.textContent = "Error parsing bin credentials";
           }
         } catch (error) {
-          statusText.textContent = "Using offline browser memory";
-          const savedCount = localStorage.getItem('finishedPensCount');
-          if (savedCount !== null) quantityInput.value = savedCount;
+          statusText.textContent = "Offline storage standby active";
+          const fallback = localStorage.getItem('finishedPensCount');
+          if (fallback !== null) quantityInput.value = fallback;
         }
       });
 
@@ -156,24 +156,32 @@
         quantityInput.value = currentValue + 1;
       });
 
-      // Save data to the cloud API
+      // Update data record inside JSONbin
       saveBtn.addEventListener('click', async () => {
-        const val = quantityInput.value;
+        const val = parseInt(quantityInput.value) || 0;
         saveBtn.disabled = true;
-        statusText.textContent = "Saving...";
+        statusText.textContent = "Writing payload securely...";
 
         try {
-          const response = await fetch(`${API_SET_URL}${val}`);
+          const response = await fetch(API_URL, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Master-Key': MASTER_KEY
+            },
+            body: JSON.stringify({ count: val })
+          });
+
           if (response.ok) {
-            localStorage.setItem('finishedPensCount', val); // Fallback backup
+            localStorage.setItem('finishedPensCount', val);
             saveBtn.textContent = 'Saved! ✓';
             saveBtn.style.backgroundColor = '#1f6feb';
             statusText.textContent = "Cloud update successful";
           } else {
-            throw new Error("API rejection");
+            throw new Error("Storage server error");
           }
         } catch (error) {
-          statusText.textContent = "Error saving online!";
+          statusText.textContent = "Authentication failure!";
           saveBtn.style.backgroundColor = '#da3637';
         }
 
